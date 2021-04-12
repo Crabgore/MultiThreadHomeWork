@@ -25,28 +25,35 @@ class ViewController: UIViewController {
     
     }
     
+    //проблема в асинхронности. Мы пытаемся присвоить значение элементу, которого ещё не существует, так как между добавлением элементов
+    //проходит 1 секунда, присвоение же происходит мгновенно. Селаем задачи синхронными и через 1001 секунду получаем готовый необходимый
+    //массив
+    //Race Condition
     func exampleOne() {
         var storage: [String] = []
         let concurrentQueue = DispatchQueue(label: "concurrent", attributes: .concurrent)
         
-        concurrentQueue.async {
+        concurrentQueue.sync {
             for i in 0...1000 {
                 sleep(1)
                 storage.append("Cell: \(i)")
             }
         }
 
-        concurrentQueue.async {
+        concurrentQueue.sync {
             for i in 0...1000 {
                 storage[i] = "Box: \(i)"
             }
         }
     }
     
+    //Проблема с сихронном запуске задачи в главной очереди (в UI-потоке). При изменении на асинхронный запуск получаем последовательность
+    //a -> d -> c -> b
+    //Deathlock
     func exampleTwo() {
         print("a")
         DispatchQueue.main.async {
-            DispatchQueue.main.sync {
+            DispatchQueue.main.async {
                 print("b")
             }
             print("c")
